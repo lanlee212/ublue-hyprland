@@ -38,6 +38,10 @@ modules:
         - polkit
         - mate-polkit
         - power-profiles-daemon
+        - geany
+        - steam 
+        - xarchiver
+        - nemo
 
   - type: script
     snippets:
