@@ -16,11 +16,13 @@ modules:
       - source: system
         destination: / # copies files/system/* into your image's root folder /
 
-  # RPM Fusion first: steam + codecs live there (ublue base ships negativo17, not rpmfusion)
+  # RPM Fusion first: steam + codecs live there (ublue base ships negativo17, not rpmfusion).
+  # Terra: noctalia-greeter (greetd-based Noctalia login screen) — not in default Fedora repos.
   - type: script
     snippets:
       - dnf5 -y install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-44.noarch.rpm
       - dnf5 -y install https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-44.noarch.rpm
+      - dnf5 -y install --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release
 
   # Desktop runtime + compositor + shell + apps
   - type: dnf
@@ -35,8 +37,10 @@ modules:
         - xdg-desktop-portal-hyprland
         - noctalia
         - ghostty
-        # graphical login
-        - sddm
+        # graphical login: greetd + Noctalia Greeter (Noctalia-styled login screen, replaces sddm)
+        - greetd
+        - noctalia-greeter          # from Terra repo (added by the script module above)
+        - systemd-pam               # pam_systemd.so — F44 split; greetd's PAM session line needs it
         # desktop services the lean base-main image doesn't ship
         - pipewire
         - pipewire-pulse
@@ -48,10 +52,20 @@ modules:
         - steam 
         - xarchiver
         - nemo
+        - ripgrep
+        - nodejs
+        - fedora-base-devel
 
   - type: script
     snippets:
-      - systemctl enable sddm.service
+      # greetd setup (replaces sddm): greetd.service aliases display-manager.service,
+      # which Fedora's graphical.target already Wants — enable alone is sufficient.
+      - systemd-sysusers          # materialize the greetd system user (uid 999) at build time
+      - mkdir -p /var/lib/noctalia-greeter
+      - chown -R greetd:greetd /var/lib/greetd /var/lib/noctalia-greeter
+      - cp /usr/share/ublue-hyprland/config/greetd/config.toml /etc/greetd/config.toml
+      - bash /usr/share/noctalia-greeter/setup_greetd_pam.sh   # add pam_systemd session line (idempotent, backs up)
+      - systemctl enable greetd.service
       - systemctl set-default graphical.target
 
   - type: signing # sets up policy & signing files so the signed image verifies cleanly

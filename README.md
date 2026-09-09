@@ -16,7 +16,7 @@ Minimal Hyprland + Noctalia desktop image, built with [BlueBuild](https://blue-b
 | xdg-desktop-portal-hyprland | COPR `lionheartp/Hyprland` | 1.4.1 |
 | Noctalia | Fedora default repos | 5.0.1 |
 | ghostty | COPR `scottames/ghostty` | latest |
-| sddm | Fedora default repos | 0.21.0 |
+| greetd + Noctalia Greeter | Fedora / Terra (fyralabs) | 0.10.3 / 1.3.1 |
 
 Plus a lean desktop runtime the base image doesn't ship: pipewire(+pulse), wireplumber,
 polkit + mate-polkit agent (GNOME-style auth dialog), power-profiles-daemon.
@@ -31,6 +31,11 @@ first login (no-clobber) by `/etc/profile.d/ublue-hyprland.sh`. It only:
   SUPER+arrows/space focus, SUPER+Q/F/T, SUPER(+SHIFT)+1..9 workspaces
 
 Noctalia generates its own config (setup wizard) on first run — nothing shipped for it.
+
+The login screen is the Noctalia Greeter (greetd), matching the shell's visual language:
+`/usr/share/ublue-hyprland/config/greetd/config.toml` is copied to `/etc/greetd/config.toml`
+at build time and launches `noctalia-greeter-session` as the `greetd` user. sddm is not
+installed.
 
 ## Install (rebase)
 
@@ -50,7 +55,7 @@ systemctl reboot
 - [x] Recipe scaffold
 - [x] First CI build pipeline (BlueBuild action v1.12.0, daily 06:00 UTC + on push)
 - [x] Cosign signing keys (pub in repo, private key in SIGNING_SECRET)
-- [ ] First successful signed image build
+- [x] First successful signed image build ✓ (ghcr.io/lanlee212/ublue-hyprland:latest, verified with cosign.pub)
 - [ ] Smoke test (VM rebase)
 - [ ] Optional: bootc-image-builder ISO
 
@@ -60,4 +65,5 @@ systemctl reboot
 recipes/recipe.yml                 # build recipe (modules: files → dnf → script)
 files/system/etc/profile.d/        # first-login config installer
 files/system/usr/share/ublue-hyprland/config/hypr/hyprland.lua
+files/system/usr/share/ublue-hyprland/config/greetd/config.toml
 ```
