@@ -54,7 +54,6 @@ modules:
         - nemo
         - ripgrep
         - nodejs
-        - fedora-base-devel
 
   - type: script
     snippets:
