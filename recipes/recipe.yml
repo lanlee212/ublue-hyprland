@@ -1,0 +1,48 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
+# image will be published to ghcr.io/<user>/<name>
+name: ublue-hyprland
+# description will be included in the image's metadata
+description: Minimal Hyprland + Noctalia desktop image (Fedora Atomic)
+
+# the base image to build on top of (FROM) and the version tag to use
+base-image: ghcr.io/ublue-os/base-main
+image-version: latest # F44 today; pin to a Fedora version (e.g. 44) for reproducibility
+
+# module configuration, executed in order
+modules:
+  - type: files
+    files:
+      - source: system
+        destination: / # copies files/system/* into your image's root folder /
+
+  # Desktop runtime + compositor + shell
+  - type: dnf
+    repos:
+      copr:
+        - lionheartp/Hyprland     # hyprland 0.56.x + xdg-desktop-portal-hyprland + ecosystem
+        - scottames/ghostty       # terminal (matches Lee's desktop)
+    install:
+      packages:
+        # compositor & shell (noctalia 5.x is in default Fedora 44 repos)
+        - hyprland
+        - xdg-desktop-portal-hyprland
+        - noctalia
+        - ghostty
+        # graphical login
+        - sddm
+        # desktop services the lean base-main image doesn't ship
+        - pipewire
+        - pipewire-pulse
+        - wireplumber
+        - polkit
+        - polkit-gnome
+        - power-profiles-daemon
+
+  - type: script
+    snippets:
+      - systemctl enable sddm.service
+      - systemctl set-default graphical.target
+
+  # NOTE: signing module intentionally omitted for now — add it when the
+  # GitHub CI + cosign keypair are set up (module needs COSIGN_PRIVATE_KEY secret)
