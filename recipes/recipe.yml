@@ -30,6 +30,7 @@ modules:
       copr:
         - lionheartp/Hyprland     # hyprland 0.56.x + xdg-desktop-portal-hyprland + ecosystem
         - scottames/ghostty       # terminal (matches Lee's desktop)
+        - aeiro/nwg-shell		  # nwg-look
       files:
         - https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo   # brave-origin (official Brave repo)
     install:
@@ -49,7 +50,6 @@ modules:
         - pipewire-pulse
         - wireplumber
         - polkit
-        - mate-polkit
         - power-profiles-daemon
         # apps (Lee)
         - brave-origin             # from the official Brave repo (added above)
@@ -59,6 +59,11 @@ modules:
         - nemo
         - ripgrep
         - nodejs
+        - nwg-look 
+        - adw-gtk3-theme
+        - papirus-icon-theme
+        - abattis-cantarell-fonts
+        - fira-code-fonts
         # pyprland runtime deps (the tool itself is pip-installed in the next module — no Fedora package)
         - python3-pip
         - python3-aiohttp
