@@ -36,7 +36,7 @@ modules:
         - pipewire-pulse
         - wireplumber
         - polkit
-        - lxpolkit
+        - mate-polkit
         - power-profiles-daemon
 
   - type: script

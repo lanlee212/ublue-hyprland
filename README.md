@@ -19,7 +19,7 @@ Minimal Hyprland + Noctalia desktop image, built with [BlueBuild](https://blue-b
 | sddm | Fedora default repos | 0.21.0 |
 
 Plus a lean desktop runtime the base image doesn't ship: pipewire(+pulse), wireplumber,
-polkit + lxpolkit agent, power-profiles-daemon.
+polkit + mate-polkit agent (GNOME-style auth dialog), power-profiles-daemon.
 
 ## The shipped config (all of it)
 

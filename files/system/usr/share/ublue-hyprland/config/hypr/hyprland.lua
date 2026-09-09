@@ -9,7 +9,7 @@
 -- Noctalia is the shell (bar/launcher/session/OSD/lock/
 -- notifications/wallpaper). Polkit agent for privilege prompts.
 hl.on("hyprland.start", function()
-    hl.exec_cmd("lxpolkit")
+    hl.exec_cmd("/usr/libexec/polkit-mate-authentication-agent-1")
     hl.exec_cmd("noctalia")
 end)
 
