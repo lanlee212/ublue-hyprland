@@ -16,7 +16,13 @@ modules:
       - source: system
         destination: / # copies files/system/* into your image's root folder /
 
-  # Desktop runtime + compositor + shell
+  # RPM Fusion first: steam + codecs live there (ublue base ships negativo17, not rpmfusion)
+  - type: script
+    snippets:
+      - dnf5 -y install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-44.noarch.rpm
+      - dnf5 -y install https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-44.noarch.rpm
+
+  # Desktop runtime + compositor + shell + apps
   - type: dnf
     repos:
       copr:
