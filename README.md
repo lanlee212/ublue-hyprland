@@ -47,10 +47,11 @@ systemctl reboot
 
 ## Status / roadmap
 
-- [x] Recipe scaffold (local, no CI yet)
-- [ ] First build + container validation
-- [ ] GitHub Actions CI (BlueBuild) + cosign signing keys
-- [ ] Signing module added to recipe
+- [x] Recipe scaffold
+- [x] First CI build pipeline (BlueBuild action v1.12.0, daily 06:00 UTC + on push)
+- [x] Cosign signing keys (pub in repo, private key in SIGNING_SECRET)
+- [ ] First successful signed image build
+- [ ] Smoke test (VM rebase)
 - [ ] Optional: bootc-image-builder ISO
 
 ## Local layout

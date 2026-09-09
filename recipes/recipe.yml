@@ -54,5 +54,4 @@ modules:
       - systemctl enable sddm.service
       - systemctl set-default graphical.target
 
-  # NOTE: signing module intentionally omitted for now — add it when the
-  # GitHub CI + cosign keypair are set up (module needs COSIGN_PRIVATE_KEY secret)
+  - type: signing # sets up policy & signing files so the signed image verifies cleanly
