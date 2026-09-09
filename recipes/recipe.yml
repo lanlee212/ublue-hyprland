@@ -30,11 +30,14 @@ modules:
       copr:
         - lionheartp/Hyprland     # hyprland 0.56.x + xdg-desktop-portal-hyprland + ecosystem
         - scottames/ghostty       # terminal (matches Lee's desktop)
+      files:
+        - https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo   # brave-origin (official Brave repo)
     install:
       packages:
         # compositor & shell (noctalia 5.x is in default Fedora 44 repos)
         - hyprland
         - xdg-desktop-portal-hyprland
+        - hyprland-guiutils         # silences 0.56's startup nag (hyprland-dialog on PATH); same COPR
         - noctalia
         - ghostty
         # graphical login: greetd + Noctalia Greeter (Noctalia-styled login screen, replaces sddm)
@@ -48,12 +51,26 @@ modules:
         - polkit
         - mate-polkit
         - power-profiles-daemon
+        # apps (Lee)
+        - brave-origin             # from the official Brave repo (added above)
         - geany
         - steam 
         - xarchiver
         - nemo
         - ripgrep
         - nodejs
+        # pyprland runtime deps (the tool itself is pip-installed in the next module — no Fedora package)
+        - python3-pip
+        - python3-aiohttp
+        - python3-aiofiles
+        - python3-pillow
+
+  - type: script
+    snippets:
+      # pyprland (scratchpads etc.) — not packaged for Fedora; pinned pip install from PyPI.
+      # --prefix=/usr: base-main's /usr/local is an ostree symlink, files there don't survive
+      # the commit. --no-deps: runtime deps come from the python3-* RPMs above.
+      - python3 -m pip install --break-system-packages --no-deps --prefix=/usr pyprland==3.4.4
 
   - type: script
     snippets:
@@ -64,6 +81,11 @@ modules:
       - chown -R greetd:greetd /var/lib/greetd /var/lib/noctalia-greeter
       - cp /usr/share/ublue-hyprland/config/greetd/config.toml /etc/greetd/config.toml
       - bash /usr/share/noctalia-greeter/setup_greetd_pam.sh   # add pam_systemd session line (idempotent, backs up)
+      # greetd execs the session command directly (no profile sourcing) — swap the Hyprland
+      # session entry for a wrapper that sources /etc/profile first, so profile.d first-login
+      # installers (ublue-hyprland.sh config copy) run for fresh users.
+      - cp /usr/share/ublue-hyprland/config/wayland-sessions/hyprland.desktop /usr/share/wayland-sessions/hyprland.desktop
+      - chmod +x /usr/share/ublue-hyprland/session-hyprland.sh
       - systemctl enable greetd.service
       - systemctl set-default graphical.target
 
