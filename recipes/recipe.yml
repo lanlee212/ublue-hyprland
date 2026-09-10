@@ -81,6 +81,27 @@ modules:
         - python3-aiofiles
         - python3-pillow
 
+      # Side-effect deps we do NOT want:
+      #  - blender: negativo17's 1 GiB RPM declares Provides for a pile of libs Fedora
+      #    ships separately (including libopenxr_loader.so.1), so the solver picks it
+      #    as the provider instead of the real small package. qt6-qtquick3d (pulled in
+      #    by kde-connect -> kde-connect-libs -> qt6-qtmultimedia) needs
+      #    libopenxr_loader.so.1 -> blender got chosen over Fedora's openxr-libs.
+      #    Verified in a base-main container: excluded = openxr-libs is used instead.
+      #  - kitty: weak dep (Recommends) of hyprland; ghostty is Lee's terminal.
+      exclude:
+        - blender
+        - kitty
+
+  - type: script
+    snippets:
+      # KDE Connect (kde-connect in the package list above) needs inbound TCP/UDP
+      # 1714-1764, otherwise firewalld drops the phone's discovery replies and
+      # connections — the paired device then never shows as reachable. Base's public
+      # zone only ships ssh/mdns/dhcpv6-client. Offline tool = works during the build,
+      # no firewalld daemon running.
+      - firewall-offline-cmd --zone=public --add-service=kdeconnect
+
   - type: script
     snippets:
       # pyprland (scratchpads etc.) — not packaged for Fedora; pinned pip install from PyPI.
