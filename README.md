@@ -19,7 +19,7 @@ Minimal Hyprland + Noctalia desktop image, built with [BlueBuild](https://blue-b
 | ghostty | COPR `scottames/ghostty` | latest |
 | brave-origin | Brave official repo | 1.94.x |
 | pyprland | PyPI (pip, pinned, `--prefix=/usr`) | 3.4.4 |
-| greetd + Noctalia Greeter | Fedora / Terra (fyralabs) | 0.10.3 / 1.3.1 |
+| greetd + Noctalia Greeter | Fedora / Terra (fyralabs) | 0.10.3 / 1.5.0 |
 
 Plus a lean desktop runtime the base image doesn't ship: pipewire(+pulse), wireplumber,
 polkit, power-profiles-daemon.
@@ -41,6 +41,22 @@ at build time and launches `noctalia-greeter-session` as the `greetd` user. sddm
 installed. Because greetd execs the session directly (no profile sourcing), the Hyprland
 session entry points at a wrapper (`/usr/share/ublue-hyprland/session-hyprland.sh`) that
 sources /etc/profile first — keeping profile.d first-login installers working.
+
+**SELinux and the greeter state dir.** Noctalia's *Settings → Security → Noctalia Greeter →
+Sync Now* pushes wallpaper/palette to the greeter by writing `/var/lib/noctalia-greeter/`
+(`sync.toml` + the synced wallpapers). The greeter runs confined as `xdm_t`, and Fedora's
+policy gives `xdm_t` only **read** access to the default `var_lib_t` label — so the greeter
+could display the synced appearance but every save failed:
+
+```
+[WRN] [greeter-config] failed to replace '/var/lib/noctalia-greeter/sync.toml': Permission denied
+[WRN] [greeter-surface] failed to save sync.toml (check permissions on /var/lib/noctalia-greeter/sync.toml)
+```
+
+i.e. session/scheme choices made on the login screen were silently dropped. The image ships
+the same label `greetd-selinux` gives `/var/lib/greetd` (`xdm_var_lib_t`), via an fcontext
+rule plus a tmpfiles `d`+`Z` line that re-labels the directory on every boot. A distro without
+SELinux enforcement (e.g. Arch) never sees this, which is why it only showed up on this image.
 
 ## DNS content filter (adult-content blocklist)
 
@@ -96,6 +112,7 @@ systemctl reboot
 - [x] Cosign signing keys (pub in repo, private key in SIGNING_SECRET)
 - [x] First successful signed image build ✓ (ghcr.io/lanlee212/ublue-hyprland:latest, verified with cosign.pub)
 - [x] DNS content filter (dnsmasq + StevenBlack porn-only blocklist, weekly auto-refresh)
+- [x] Noctalia Greeter appearance sync (SELinux label for the greeter state dir)
 - [ ] Smoke test (VM rebase)
 - [ ] Optional: bootc-image-builder ISO
 
@@ -104,6 +121,8 @@ systemctl reboot
 ```
 recipes/recipe.yml                 # build recipe (modules: files → dnf → script)
 files/system/etc/profile.d/        # first-login config installer
+files/system/etc/selinux/targeted/contexts/files/file_contexts.local  # greeter state dir -> xdm_var_lib_t
+files/system/usr/lib/tmpfiles.d/noctalia-greeter-selinux.conf  # d + Z: greetd ownership + relabel each boot
 files/system/etc/dnsmasq.d/ublue-filter.conf        # filtering resolver config
 files/system/etc/NetworkManager/conf.d/90-ublue-dns.conf  # dns=none (keep the filter authoritative)
 files/system/etc/systemd/resolved.conf.d/50-ublue-dns.conf # resolved → 127.0.0.1

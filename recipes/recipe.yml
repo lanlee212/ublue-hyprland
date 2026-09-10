@@ -92,6 +92,7 @@ modules:
       exclude:
         - blender
         - kitty
+        - firefox
 
   - type: script
     snippets:
