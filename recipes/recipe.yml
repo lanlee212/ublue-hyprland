@@ -65,6 +65,9 @@ modules:
         - abattis-cantarell-fonts
         - fira-code-fonts
         - gcc-c++
+        - gcc 
+        - make 
+        - python3
         # pyprland runtime deps (the tool itself is pip-installed in the next module — no Fedora package)
         - python3-pip
         - python3-aiohttp
