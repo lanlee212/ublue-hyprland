@@ -81,6 +81,7 @@ modules:
         - python3-aiofiles
         - python3-pillow
         - materia-gtk-theme
+        - gh
 
       # Side-effect deps we do NOT want:
       #  - blender: negativo17's 1 GiB RPM declares Provides for a pile of libs Fedora
