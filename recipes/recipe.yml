@@ -46,7 +46,7 @@ modules:
         - ghostty
         # graphical login: greetd + Noctalia Greeter (Noctalia-styled login screen, replaces sddm)
         - greetd
-        - noctalia-greeter          # from Terra repo (added by the script module above)
+        - noctalia-greeter-git          # from Terra repo (added by the script module above)
         - systemd-pam               # pam_systemd.so — F44 split; greetd's PAM session line needs it
         # desktop services the lean base-main image doesn't ship
         - pipewire
