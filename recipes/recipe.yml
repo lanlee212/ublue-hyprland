@@ -42,7 +42,7 @@ modules:
         - umbriel-nightly
         - xdg-desktop-portal-hyprland
         - hyprland-guiutils         # silences 0.56's startup nag (hyprland-dialog on PATH); same COPR
-        - noctalia
+        - noctalia-git
         - ghostty
         # graphical login: greetd + Noctalia Greeter (Noctalia-styled login screen, replaces sddm)
         - greetd
