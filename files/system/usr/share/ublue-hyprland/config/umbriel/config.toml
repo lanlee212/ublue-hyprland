@@ -1,0 +1,355 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  Umbriel configuration — port of ~/.config/hypr/hyprland.lua  (2026-09-14)
+#
+#  Same desktop intent: qtile-parity keymap, flat/OneDark, master layout,
+#  Noctalia shell + Noctalia Greeter, 5 workspaces, 4 scratchpads, DNS filter
+#  untouched. Umbriel replaces pyprland (native scratchpads), the Hyprland
+#  layout-switcher Noctalia plugin (native workspace-set-layout) and
+#  noctalia.lua apply_theme() (Noctalia writes a palette include instead).
+#
+#  Shipped in the image at /usr/share/ublue-hyprland/config/umbriel/config.toml
+#  and copied to ~/.config/umbriel/config.toml on first login (no-clobber)
+#  by /etc/profile.d/ublue-hyprland.sh.
+#
+#  Validate without starting anything:  umbriel validate
+#  Docs: https://docs.noctalia.dev/umbriel/
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ── Includes ───────────────────────────────────────────────────────────────
+# Noctalia's "Umbriel" template (Settings → Templates) writes its palette to
+# ~/.config/umbriel/noctalia.toml AND rewrites the `files` line below to
+# files = ["noctalia.toml"]. That is the replacement for
+# require("noctalia").apply_theme(). Do NOT also list noctalia.toml under
+# [include.optional]: the same file included twice (required + optional) makes
+# the whole configuration invalid — verified with `umbriel validate`:
+#   warning: include cycle or duplicate skipped: .../noctalia.toml
+#   configuration invalid
+[include]
+files = []
+
+[include.optional]
+files = []
+
+# ── General ────────────────────────────────────────────────────────────────
+[general]
+autostart = [
+    # (Hyprland exec-once list, minus pypr: Umbriel scratchpads are native)
+    "sway-audio-idle-inhibit",
+    "wl-clip-persist --clipboard regular --reconnect-tries 0",
+    "wl-paste --type text --watch cliphist store",
+    "kdeconnect-indicator",
+    "noctalia",
+]
+mod_key = "Super"          # was mainMod = "SUPER"
+xwayland = true            # xwayland-satellite is a dependency of umbriel-nightly
+show_cheatsheet = false    # Hyprland had no cheatsheet overlay; flip on if you want it
+focus_on_activate = false
+
+# ── Environment (was hl.env) ───────────────────────────────────────────────
+[environment]
+QT_QPA_PLATFORM = "wayland;xcb"
+QT_AUTO_SCREEN_SCALE_FACTOR = "1"
+XCURSOR_SIZE = "24"
+# HYPRCURSOR_SIZE deliberately dropped (Hyprland-only); cursor size is
+# [input.cursor] below.
+
+# ── Outputs ────────────────────────────────────────────────────────────────
+# The Hyprland config used a single wildcard rule (preferred/auto), so nothing
+# is pinned here either: Umbriel auto-places and uses native modes.
+# `umbriel outputs` lists connector names. Uncomment for 5 fixed workspaces like
+# Hyprland's persistent 1-5 (workspace-switch:N still works without it, the
+# positions are just created on demand):
+#
+# [output.eDP-1]
+# workspaces = 5
+#
+# [output.DP-2]
+# workspaces = 5
+# vrr = "fullscreen"
+
+[workspaces]
+back_and_forth = false
+empty_above = false
+
+# ── Appearance (was general.gaps_*/border_size + decoration) ───────────────
+[appearance]
+prefer_no_csd = true
+border_width = 1           # was border_size = 1
+corner_radius = 0          # was rounding = 0 (flat, Noctalia-style)
+drag_opacity = 0.75
+
+# Hyprland blurred globally; Umbriel needs the selectorless blur window rule
+# further down to opt every surface in.
+[appearance.blur]
+enabled = true
+optimized = true           # was new_optimizations = true
+passes = 1
+radius = 1                 # was size = 1
+noise = 0.0                # was noise = 0
+brightness = 2.0           # was brightness = 2
+contrast = 1.0             # was contrast = 1
+saturation = 1.0           # Hyprland has no equivalent; 1.0 keeps colours as-is
+
+[appearance.shadow]
+enabled = true
+softness = 10              # was range = 10 (render_power has no equivalent)
+offset_x = 0               # Hyprland's default shadow offset is 0
+offset_y = 0
+
+# ── Input (was hl.config input) ────────────────────────────────────────────
+[input]
+middle_click_paste = true
+
+[input.keyboard]
+layout = "us"              # was kb_layout = "us"
+repeat_rate = 25
+repeat_delay = 600
+numlock_toggle = true      # was numlock_by_default = true
+
+[input.touchpad]
+tap = true                 # was tap_to_click = true
+natural_scroll = false
+
+[input.mouse]
+sensitivity = 0.0
+
+[input.cursor]
+size = 24
+
+[input.focus]
+follows_mouse = true       # was follow_mouse = 1
+
+# ── Scratchpads (were pyprland [scratchpads.*]) ────────────────────────────
+# Native in Umbriel. Defining named pads disables the implicit `default` one, so
+# every scratchpad action in [keybinds] carries a name.
+[[scratchpad]]
+name = "term"              # F12,  was pypr term  (ghostty)
+
+[[scratchpad]]
+name = "fm"                # Mod+A, was pypr fm   (nemo)
+
+[[scratchpad]]
+name = "sol"               # Mod+S, was the native special:sol workspace (aisleriot)
+
+[[scratchpad]]
+name = "gam"               # Mod+G, was pypr gam  (faugus-launcher)
+
+# ── Keybinds (1:1 where an action exists) ──────────────────────────────────
+[keybinds]
+
+# Session (Mod+Ctrl+R reload, Mod+Ctrl+Q quit)
+"Mod+Ctrl+R" = { action = "config-reload", repeat = false }
+"Mod+Ctrl+Q" = { action = "session-quit", repeat = false }
+
+# Apps
+"Mod+Return" = { action = "spawn:ghostty", repeat = false }
+"Mod+D" = { action = "spawn:noctalia msg panel-toggle launcher", repeat = false }
+"Mod+W" = { action = "spawn:noctalia msg panel-toggle wallpaper", repeat = false }
+"Mod+Shift+N" = { action = "spawn:brave-origin --incognito", repeat = false }
+
+# Focus (was hl.dsp.focus{direction})
+"Mod+Left" = "window-focus-left"
+"Mod+Right" = "window-focus-right"
+"Mod+Up" = "window-focus-up"
+"Mod+Down" = "window-focus-down"
+# was hl.dsp.layout("cyclenext")
+"Mod+Space" = { action = "window-focus-next", repeat = false }
+# was the Noctalia hypr-layout-switcher plugin cycling master <-> dwindle;
+# native here and it also reaches scrolling
+"Mod+Tab" = { action = "workspace-set-layout:toggle", repeat = false }
+
+# Move window (was hl.dsp.window.move{direction})
+"Mod+Shift+Left" = "column-move-left"
+"Mod+Shift+Right" = "column-move-right"
+"Mod+Shift+Up" = "window-move-up"
+"Mod+Shift+Down" = "window-move-down"
+
+# Master area size (was hl.dsp.layout("mfact ∓0.05")); in master layout the
+# master and stack areas are the two columns, so this resizes that split.
+"Mod+Ctrl+Left" = "window-modify-width:-0.05"
+"Mod+Ctrl+Right" = "window-modify-width:0.05"
+
+# Window state
+"Mod+Q" = "window-close"
+"Mod+Shift+Q" = { action = "spawn:noctalia msg panel-toggle session", repeat = false }
+"Mod+F" = "window-toggle-fullscreen"
+"Mod+T" = "window-toggle-floating"
+# pause media + lock & suspend (shipped system script, same behaviour as before)
+"Mod+L" = { action = "spawn:/usr/share/ublue-hyprland/scripts/lock-suspend.sh", repeat = false }
+
+# Scratchpads (qtile DropDown parity; the Hyprland Mod+S helper script is gone)
+"F12" = "scratchpad-toggle:term"
+"Mod+A" = "scratchpad-toggle:fm"
+"Mod+S" = "scratchpad-toggle:sol"
+"Mod+G" = "scratchpad-toggle:gam"
+# Park/unpark the focused window in a pad (also the only way to make the shared
+# ghostty app-id a dropdown — see the term rule below)
+"Mod+Shift+F12" = { action = "window-toggle-scratchpad:term", repeat = false }
+
+# Volume & brightness (Noctalia OSD; allowed while the screen is locked)
+"XF86AudioRaiseVolume" = { action = "spawn:noctalia msg volume-up", allow_when_locked = true }
+"XF86AudioLowerVolume" = { action = "spawn:noctalia msg volume-down", allow_when_locked = true }
+"XF86AudioMute" = { action = "spawn:noctalia msg volume-mute", allow_when_locked = true }
+"XF86MonBrightnessUp" = { action = "spawn:noctalia msg brightness-up", allow_when_locked = true }
+"XF86MonBrightnessDown" = { action = "spawn:noctalia msg brightness-down", allow_when_locked = true }
+
+# Screenshots: Print keeps the single-key full capture.
+"Print" = { action = "spawn:noctalia msg screenshot-fullscreen", repeat = false }
+
+# Screenshot submap (was mango's Print / Shift+Print / Ctrl+Alt+A):
+#   Mod+Shift+S then 1 full | 2 region | 3 annotate, Escape to leave.
+# 1 and 2 use the shipped grim/slurp script (wlr-screencopy, no portal); 3 uses
+# Noctalia's annotator because satty is not in the image. Swap 3 for
+# /usr/share/ublue-hyprland/scripts/screenshot.sh annotate after adding satty.
+"Mod+Shift+S" = { action = "submap:shot", repeat = false }
+"submap[shot],1" = { action = "spawn:/usr/share/ublue-hyprland/scripts/screenshot.sh full", submap = "reset" }
+"submap[shot],2" = { action = "spawn:/usr/share/ublue-hyprland/scripts/screenshot.sh area", submap = "reset" }
+"submap[shot],3" = { action = "spawn:noctalia msg screenshot-annotate", submap = "reset" }
+"submap[shot],Escape" = "submap:reset"
+"Escape" = "submap:reset"   # global emergency exit from any submap layer
+
+# Workspaces 1-5 (was the hl.bind loop + persistent workspace rules)
+"Mod+1" = "workspace-switch:1"
+"Mod+2" = "workspace-switch:2"
+"Mod+3" = "workspace-switch:3"
+"Mod+4" = "workspace-switch:4"
+"Mod+5" = "workspace-switch:5"
+"Mod+Shift+1" = "window-move-to-workspace:1"
+"Mod+Shift+2" = "window-move-to-workspace:2"
+"Mod+Shift+3" = "window-move-to-workspace:3"
+"Mod+Shift+4" = "window-move-to-workspace:4"
+"Mod+Shift+5" = "window-move-to-workspace:5"
+
+# Mouse: Hyprland needed Mod+drag / Mod+right-drag binds for move and resize.
+# Umbriel does both natively (Mod+Left-drag moves a tiled window, Mod+Right-drag
+# resizes from an outer edge, Escape releases) — nothing to bind.
+# "Mod+MouseMiddle" = "layout-scroll-drag"     # if you ever use scrolling layout
+
+# ── Layout (was general.layout = "master" + master{} block) ────────────────
+[layout]
+mode = "master"
+gap = 10                   # was gaps_in = 10
+
+[layout.struts]
+# was gaps_out = 10: struts reserve space inside the bar's exclusive zone
+top = 10
+bottom = 10
+left = 10
+right = 10
+
+[layout.master]
+position = "left"          # was orientation = "left"
+default_width_fraction = 0.5   # was mfact = 0.5
+new_becomes_master = false     # was new_status = "slave"
+new_on_top = false             # qtile MonadTall appends to the stack
+
+[layout.dwindle]
+preserve_split = true      # kept for the Mod+Tab toggle
+
+# ── Layer rules (blur the Noctalia bar/panels, as before) ──────────────────
+[[layer_rule]]
+match.namespace = "^noctalia-(bar-[^\"]+|notification|dock|panel|attached-panel|osd|desktop-widget-[^\"]*)$"
+blur = true
+blur_ignore_alpha = 0.5
+blur_popups = true
+blur_optimized = false
+
+# ── Window rules (was the hl.window_rule list) ─────────────────────────────
+# Global blur opt-in first (Hyprland blurred everything), later rules override.
+[[window_rule]]
+blur = true
+blur_optimized = false
+
+# Floats (qtile floating_layout + mango rule.conf parity)
+[[window_rule]]
+match.app_id = "^xdg-desktop-portal-gtk$"
+default_floating = true
+
+[[window_rule]]
+match.app_id = "^megasync$"
+default_floating = true
+
+[[window_rule]]
+match.app_id = "^blueman-manager$"
+default_floating = true
+default_size = [1500, 900]
+
+[[window_rule]]
+match.app_id = "^(yesplaymusic|clash-verge|baidunetdisk)$"
+default_floating = true
+default_size = [1500, 900]
+
+[[window_rule]]
+match.app_id = "^pot$"
+match.title = "^Recognize$"
+default_floating = true
+
+[[window_rule]]
+match.app_id = "^Rofi$"
+default_floating = true
+
+[[window_rule]]
+match.app_id = "^python3$"
+match.title = "^qxdrag$"
+default_floating = true
+
+# Scratchpad auto-store. These app-ids are only ever used as dropdowns, so a
+# matching window opens straight into its pad under the pad's own geometry.
+[[window_rule]]
+match.app_id = "^nemo$"
+default_scratchpad = "fm"
+default_width = 0.8
+default_height = 0.8
+default_position = { x = 0, y = 0, anchor = "center" }
+
+[[window_rule]]
+match.app_id = "^sol$"
+default_scratchpad = "sol"
+default_size = [960, 540]
+default_position = { x = 0, y = 0, anchor = "center" }
+
+[[window_rule]]
+match.app_id = "^faugus-launcher$"
+default_scratchpad = "gam"
+default_width = 0.6
+default_height = 0.6
+default_position = { x = 0, y = 0, anchor = "center" }
+
+# term pad: deliberately NOT auto-assigned. ghostty's app-id
+# (com.mitchellh.ghostty) is shared with normal terminals, so a rule would drag
+# every ghostty window into the pad. F12 toggles the pad; Mod+Shift+F12 parks
+# the focused window into it. Uncomment only if you keep a dedicated terminal:
+#
+# [[window_rule]]
+# match.app_id = "^scratchpad-term$"
+# default_scratchpad = "term"
+# default_width = 0.8
+# default_height = 0.45
+# default_position = { x = 0, y = 11, anchor = "top" }
+
+# ── Hot corners: none in the Hyprland config; top-left overview is one flip away ──
+[hot_corners.top_left]
+enabled = false
+action = "overview-open"
+
+[hot_corners.top_right]
+enabled = false
+action = "overview-close"
+
+[hot_corners.bottom_left]
+enabled = false
+action = "overview-toggle"
+
+[hot_corners.bottom_right]
+enabled = false
+
+# ── Colors: left unset on purpose ──────────────────────────────────────────
+# noctalia.toml (added to [include] by Noctalia's Umbriel template) supplies
+# border/accent colors the way require("noctalia").apply_theme() did. Anything
+# set here would win over it, so keep this empty unless you want to pin a value:
+#
+# [colors]
+# background = "#282C34FF"
+# [colors.border]
+# focused = "#61AFEFFF"
+# unfocused = "#3E4452FF"

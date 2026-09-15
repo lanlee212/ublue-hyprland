@@ -42,11 +42,12 @@ modules:
         - umbriel-nightly
         - xdg-desktop-portal-hyprland
         - hyprland-guiutils         # silences 0.56's startup nag (hyprland-dialog on PATH); same COPR
-        - noctalia-git
+        - noctalia
         - ghostty
+        - foot
         # graphical login: greetd + Noctalia Greeter (Noctalia-styled login screen, replaces sddm)
         - greetd
-        - noctalia-greeter-git          # from Terra repo (added by the script module above)
+        - noctalia-greeter          # from Terra repo (added by the script module above)
         - systemd-pam               # pam_systemd.so — F44 split; greetd's PAM session line needs it
         # desktop services the lean base-main image doesn't ship
         - pipewire
@@ -54,6 +55,14 @@ modules:
         - wireplumber
         - polkit
         - power-profiles-daemon
+        # Secret Service provider. Apps keep credentials here (Chromium-family
+        # "safe storage", megasync, mail clients, git helpers); without it they
+        # silently fail to persist and re-ask every session. gnome-keyring-pam
+        # ships pam_gnome_keyring.so, which /etc/pam.d/greetd already references
+        # with dash-prefixed (ignore-if-missing) lines, so installing it makes the
+        # login auto-unlock the keyring with the user's login password.
+        - gnome-keyring
+        - gnome-keyring-pam
         # DNS content filter (adult-content blocklist): local filtering resolver
         - dnsmasq
         - curl
@@ -131,6 +140,9 @@ modules:
       # installers (ublue-hyprland.sh config copy) run for fresh users.
       - cp /usr/share/ublue-hyprland/config/wayland-sessions/hyprland.desktop /usr/share/wayland-sessions/hyprland.desktop
       - chmod +x /usr/share/ublue-hyprland/session-hyprland.sh
+      # the files module doesn't preserve the exec bit, and these are bound
+      # directly (Mod+L lock+suspend, screenshot submap)
+      - chmod +x /usr/share/ublue-hyprland/scripts/*.sh
       - systemctl enable greetd.service
       - systemctl set-default graphical.target
 

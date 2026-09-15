@@ -3,10 +3,11 @@
 Minimal Hyprland + Noctalia desktop image, built with [BlueBuild](https://blue-build.org) on top of
 [Universal Blue's lean base](https://github.com/ublue-os/image-template) (`ghcr.io/ublue-os/base-main`).
 
-> Basic by design: stock Hyprland behavior + the Noctalia shell autostarted at login.
-> No qtile-parity keymap, no OneDark theming, no scratchpad fleet — just a clean
-> Hyprland desktop whose shell (bar/launcher/session/OSD/lock/notifications/wallpaper)
-> is Noctalia.
+> Two sessions, one desktop: Hyprland (default) and Noctalia's own compositor
+> [Umbriel](https://docs.noctalia.dev/umbriel/), both running the Noctalia shell
+> (bar/launcher/session/OSD/lock/notifications/wallpaper) with the same qtile-parity
+> keymap, 5 workspaces, 4 scratchpads and the flat/no-rounding look. The Noctalia
+> Greeter is the login screen.
 
 ## What's inside
 
@@ -15,11 +16,13 @@ Minimal Hyprland + Noctalia desktop image, built with [BlueBuild](https://blue-b
 | Hyprland | COPR `lionheartp/Hyprland` | 0.56.2 |
 | hyprland-guiutils | COPR `lionheartp/Hyprland` | 0.2.2 |
 | xdg-desktop-portal-hyprland | COPR `lionheartp/Hyprland` | 1.4.1 |
-| Noctalia | Fedora default repos | 5.0.1 |
+| Noctalia | Fedora repos + `noctalia-git` | 5.1.0-git |
+| Umbriel (compositor) | Terra (`umbriel-nightly`) | 0.1.0 (git) |
+| xwayland-satellite (Umbriel X11) | Fedora (dep of umbriel-nightly) | 25.x |
 | ghostty | COPR `scottames/ghostty` | latest |
-| brave-origin | Brave official repo | 1.94.x |
+| brave-origin / helium | Brave official repo / COPR `imput/helium` | 1.94.x |
 | pyprland | PyPI (pip, pinned, `--prefix=/usr`) | 3.4.4 |
-| greetd + Noctalia Greeter | Fedora / Terra (fyralabs) | 0.10.3 / 1.5.0 |
+| greetd + Noctalia Greeter | Fedora / Terra (`noctalia-greeter-git`) | 0.10.3 / 1.5.0 |
 
 Plus a lean desktop runtime the base image doesn't ship: pipewire(+pulse), wireplumber,
 polkit, power-profiles-daemon.
@@ -32,6 +35,13 @@ first login (no-clobber) by `/etc/profile.d/ublue-hyprland.sh`. It only:
 - sets rounding 0 (flat, Noctalia-style), hides the logo/splash
 - binds a basic set: SUPER+Return ghostty, SUPER+D Noctalia launcher,
   SUPER+arrows/space focus, SUPER+Q/F/T, SUPER(+SHIFT)+1..9 workspaces
+
+`/usr/share/ublue-hyprland/config/umbriel/config.toml` ports that same keymap to Umbriel's
+TOML format — master layout with the qtile sizing, 4 named scratchpads (term/fm/sol/gam),
+the Noctalia palette as an optional include, and a screenshot submap — and is copied to
+`~/.config/umbriel/` on first login the same way. Both sessions bind the shared helper
+scripts in `/usr/share/ublue-hyprland/scripts/`: `lock-suspend.sh` (SUPER+L: pause media,
+then lock & suspend) and `screenshot.sh` (grim/slurp, wlr-screencopy — no portal).
 
 Noctalia generates its own config (setup wizard) on first run — nothing shipped for it.
 
@@ -57,6 +67,45 @@ i.e. session/scheme choices made on the login screen were silently dropped. The 
 the same label `greetd-selinux` gives `/var/lib/greetd` (`xdm_var_lib_t`), via an fcontext
 rule plus a tmpfiles `d`+`Z` line that re-labels the directory on every boot. A distro without
 SELinux enforcement (e.g. Arch) never sees this, which is why it only showed up on this image.
+
+**Greeter appearance sync needs pkexec.** Noctalia ≥5.1 picks the constrained sync path
+(`noctalia-greeter-apply-appearance --sync <staging>`), which the helper only accepts when
+it runs under `pkexec` — that is what gives it the verified `PKEXEC_UID`. Leaving
+`[shell.greeter_sync] privilege_command` set to `run0` (or sudo/doas) makes every sync fail:
+
+```
+[WRN] [greeter-sync] greeter sync failed: [ERR] [apply-appearance] --sync must be invoked through pkexec
+```
+
+so `privilege_command` stays unset on this image. `sudo noctalia-greeter passwordless-sync
+enable <user>` installs the narrow managed polkit rule for the constrained action only
+(active local sessions, that one action — not a general sudo rule), which removes the
+password prompt on every wallpaper change; `... disable <user>` reverts it.
+
+## Credentials: Secret Service (gnome-keyring)
+
+Apps that store passwords ask the session for a Secret Service
+(`org.freedesktop.secrets`). The image ships **gnome-keyring + gnome-keyring-pam** for it;
+without those packages every app silently fails to persist credentials and re-prompts each
+session. `/etc/pam.d/greetd` already carries the hooks (dash-prefixed, so they are ignored
+while the module is missing):
+
+```
+-auth    optional pam_gnome_keyring.so
+-session optional pam_gnome_keyring.so auto_start
+```
+
+That makes login unlock the keyring with the login password — for both the Hyprland and the
+Umbriel session, since both come through greetd. Two caveats worth knowing:
+
+- Auto-unlock only works when the keyring's password equals the login password. A keyring
+  carried over from another machine (or created with a different/blank password) stays
+  locked, and a locked collection reports an error instead of prompting — there is no
+  prompter in these sessions (`org.gnome.keyring.SystemPrompter` is a gnome-shell thing).
+  Fix: move `~/.local/share/keyrings/` aside and let the next login create a fresh login
+  keyring with the login password.
+- Verify from a terminal: `secret-tool store --label=test test key value` then
+  `secret-tool lookup test key` (libsecret's CLI, already in the image).
 
 ## DNS content filter (adult-content blocklist)
 
@@ -113,6 +162,8 @@ systemctl reboot
 - [x] First successful signed image build ✓ (ghcr.io/lanlee212/ublue-hyprland:latest, verified with cosign.pub)
 - [x] DNS content filter (dnsmasq + StevenBlack porn-only blocklist, weekly auto-refresh)
 - [x] Noctalia Greeter appearance sync (SELinux label for the greeter state dir)
+- [x] Greeter sync kept working after the `noctalia-git` move (pkexec, not run0)
+- [x] Umbriel session: Hyprland config ported to `umbriel/config.toml` + shipped
 - [ ] Smoke test (VM rebase)
 - [ ] Optional: bootc-image-builder ISO
 
@@ -129,6 +180,9 @@ files/system/etc/systemd/resolved.conf.d/50-ublue-dns.conf # resolved → 127.0.
 files/system/usr/lib/systemd/system/ublue-blocklist-update.{service,timer}
 files/system/usr/share/ublue-hyprland/blocklist-update.sh  # fetch + reload (build + weekly)
 files/system/usr/share/ublue-hyprland/config/hypr/hyprland.lua
+files/system/usr/share/ublue-hyprland/config/umbriel/config.toml   # Hyprland config ported to Umbriel TOML
+files/system/usr/share/ublue-hyprland/scripts/lock-suspend.sh      # SUPER+L: pause media + lock & suspend
+files/system/usr/share/ublue-hyprland/scripts/screenshot.sh        # grim/slurp screenshots (full|area|annotate)
 files/system/usr/share/ublue-hyprland/config/greetd/config.toml
 files/system/usr/share/ublue-hyprland/config/wayland-sessions/hyprland.desktop
 files/system/usr/share/ublue-hyprland/session-hyprland.sh
