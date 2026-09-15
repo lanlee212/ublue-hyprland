@@ -33,7 +33,6 @@ modules:
         - aeiro/nwg-shell         # nwg-look
         - faugus/faugus-launcher  # faugus launcher
         - imput/helium
-        - errornointernet/libsixel
       files:
         - https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo   # brave-origin (official Brave repo)
     install:
