@@ -33,6 +33,7 @@ modules:
         - aeiro/nwg-shell         # nwg-look
         - faugus/faugus-launcher  # faugus launcher
         - imput/helium
+        - che/nerd-fonts
       files:
         - https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo   # brave-origin (official Brave repo)
     install:
@@ -90,6 +91,7 @@ modules:
         - gh
         - libsixel
         - libsixel-utils
+        - nerd-fonts
         # pyprland runtime deps (the tool itself is pip-installed in the next module — no Fedora package)
         - python3-pip
         - python3-aiohttp
