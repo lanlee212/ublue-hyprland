@@ -27,6 +27,15 @@ Minimal Hyprland + Noctalia desktop image, built with [BlueBuild](https://blue-b
 Plus a lean desktop runtime the base image doesn't ship: pipewire(+pulse), wireplumber,
 polkit, power-profiles-daemon.
 
+**RustDesk** (remote desktop) comes from the official GitHub release RPM, pinned to a version
+in the recipe — nothing in Fedora or Terra packages it. The RPM also ships
+`rustdesk.service` for unattended *inbound* access; it is deliberately left **disabled**, since
+letting others connect into this machine is a per-machine decision:
+
+```sh
+sudo systemctl enable --now rustdesk.service    # only if you want inbound unattended access
+```
+
 ## The shipped config (all of it)
 
 `/usr/share/ublue-hyprland/config/hypr/hyprland.lua` is copied to `~/.config/hypr/` on
@@ -107,6 +116,45 @@ Umbriel session, since both come through greetd. Two caveats worth knowing:
 - Verify from a terminal: `secret-tool store --label=test test key value` then
   `secret-tool lookup test key` (libsecret's CLI, already in the image).
 
+## Virtualisation (QEMU/KVM)
+
+`qemu` in the package list is the metapackage — the emulator itself, for x86_64 *and* the
+other targets, with the GTK/SDL/SPICE displays, `virtiofsd` and the OVMF firmware. That part
+already works on its own: `qemu-system-x86_64 -accel kvm` runs hardware-accelerated (verified
+by booting a cirros cloud image — DHCP lease, cloud-init, serial console). What a VM workflow
+actually expects on top of it is the management layer, which this image now ships:
+
+```
+libvirt-daemon-kvm   virtqemud + the qemu driver + libvirt's default NAT network
+libvirt-client       virsh
+virt-install         create guests from the CLI
+virt-manager         GUI
+virt-viewer          console viewer (SPICE/VNC)
+swtpm                emulated TPM (Windows 11 guests)
+edk2-ovmf            UEFI firmware for guests (was only arriving as a transitive dep)
+```
+
+Permissions: guests need a CPU with AMD-V/VT-x exposed (`svm`/`vmx` in `lscpu`'s flags) plus
+`kvm_amd`/`kvm_intel` loaded — then `/dev/kvm` is all that matters, and Fedora ships it mode
+`0666`, so `qemu:///session` needs no group membership. libvirt's modular daemons are
+socket-activated and Fedora's presets enable them at install time (the
+`/etc/systemd/system/sockets.target.wants/` symlinks are part of the image), so the recipe
+enables nothing extra. For `qemu:///system` without a polkit prompt, add yourself to the
+libvirt group once:
+
+```sh
+sudo usermod -aG libvirt $USER      # log out / in afterwards
+```
+
+Quick start:
+
+```sh
+virt-install --name test --memory 2048 --vcpus 2 --disk size=20 \
+  --cdrom ~/Downloads/Fedora-Workstation.iso --osinfo detect=on,require=off
+virsh list --all
+virt-manager
+```
+
 ## DNS content filter (adult-content blocklist)
 
 Filtering is done at DNS level with a local resolver, so it covers every app on the
@@ -164,6 +212,7 @@ systemctl reboot
 - [x] Noctalia Greeter appearance sync (SELinux label for the greeter state dir)
 - [x] Greeter sync kept working after the `noctalia-git` move (pkexec, not run0)
 - [x] Umbriel session: Hyprland config ported to `umbriel/config.toml` + shipped
+- [x] Virtualisation: QEMU/KVM (already working) + libvirt, virsh, virt-install, virt-manager, swtpm
 - [ ] Smoke test (VM rebase)
 - [ ] Optional: bootc-image-builder ISO
 

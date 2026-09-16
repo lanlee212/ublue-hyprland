@@ -101,6 +101,21 @@ modules:
         - pocillo-gtk-theme         # base (chrome bits + index.theme)
         - pocillo-gtk3-theme        # GTK3 apps
         - pocillo-gtk4-theme        # GTK4/libadwaita apps
+        # Virtualisation: run and manage KVM guests. The `qemu` line above ships
+        # the emulator itself (all targets, GTK/SDL/SPICE displays, virtiofsd,
+        # OVMF firmware); these add the management layer VM tooling expects.
+        # Host is an AMD Ryzen 5 5600G (svm exposed, kvm_amd loaded) and Fedora
+        # ships /dev/kvm as mode 0666, so guests are hardware-accelerated with no
+        # group setup. For qemu:///system without a polkit prompt, add the user to
+        # the libvirt group once: sudo usermod -aG libvirt $USER
+        - libvirt-daemon-kvm       # virtqemud + qemu driver + default NAT network
+        - libvirt-client           # virsh
+        - virt-install             # create guests from the CLI
+        - virt-manager             # GUI
+        - virt-viewer              # console viewer (SPICE/VNC)
+        - swtpm                    # emulated TPM (Windows 11 guests)
+        - edk2-ovmf                # UEFI firmware for guests (listed explicitly:
+                                   # it was only arriving as a transitive dep)
     
       # Side-effect deps we do NOT want:
       #  - blender: negativo17's 1 GiB RPM declares Provides for a pile of libs Fedora
@@ -114,6 +129,17 @@ modules:
         - blender
         - kitty
         - firefox
+
+  - type: script
+    snippets:
+      # RustDesk remote-desktop client. Not packaged in Fedora or Terra, so take
+      # the official release RPM and PIN the version — bump it deliberately.
+      # Installs /usr/bin/rustdesk (1.4.9, 77 MB) plus its launcher entry and
+      # hicolor icons. rustdesk.service ships too but is deliberately NOT
+      # enabled: that is unattended INBOUND access, a per-machine decision.
+      - curl -fsSL -o /tmp/rustdesk.rpm https://github.com/rustdesk/rustdesk/releases/download/1.4.9/rustdesk-1.4.9-0.x86_64.rpm
+      - dnf5 -y install /tmp/rustdesk.rpm
+      - rm -f /tmp/rustdesk.rpm
 
   - type: script
     snippets:
