@@ -93,6 +93,7 @@ modules:
         - libsixel-utils
         - nerd-fonts
         - qemu
+        - fwupd
         # pyprland runtime deps (the tool itself is pip-installed in the next module — no Fedora package)
         - python3-pip
         - python3-aiohttp
@@ -116,7 +117,7 @@ modules:
         - swtpm                    # emulated TPM (Windows 11 guests)
         - edk2-ovmf                # UEFI firmware for guests (listed explicitly:
                                    # it was only arriving as a transitive dep)
-    
+
       # Side-effect deps we do NOT want:
       #  - blender: negativo17's 1 GiB RPM declares Provides for a pile of libs Fedora
       #    ships separately (including libopenxr_loader.so.1), so the solver picks it
@@ -135,11 +136,16 @@ modules:
       # RustDesk remote-desktop client. Not packaged in Fedora or Terra, so take
       # the official release RPM and PIN the version — bump it deliberately.
       # Installs /usr/bin/rustdesk (1.4.9, 77 MB) plus its launcher entry and
-      # hicolor icons. rustdesk.service ships too but is deliberately NOT
-      # enabled: that is unattended INBOUND access, a per-machine decision.
+      # hicolor icons.
       - curl -fsSL -o /tmp/rustdesk.rpm https://github.com/rustdesk/rustdesk/releases/download/1.4.9/rustdesk-1.4.9-0.x86_64.rpm
       - dnf5 -y install /tmp/rustdesk.rpm
       - rm -f /tmp/rustdesk.rpm
+      # The RPM's own postinstall ENABLES rustdesk.service, which is unattended
+      # INBOUND access (anyone holding the RustDesk ID can connect in). Ship it
+      # off; per-machine opt-in:  sudo systemctl enable --now rustdesk.service
+      # (the unit file stays under /usr/share/rustdesk/files/, the enable
+      # symlink it creates lives in /etc/systemd/system/multi-user.target.wants/)
+      - systemctl disable rustdesk.service
 
   - type: script
     snippets:

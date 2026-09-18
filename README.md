@@ -155,6 +155,28 @@ virsh list --all
 virt-manager
 ```
 
+**The default NAT network needs one image-provided fix to come up.** `libvirt-daemon-common`
+ships `/var/lib/libvirt` as RPM file entries, but an ostree/bootc image carries no `/var`
+content — so on the target the directory doesn't exist and the libvirt daemons create it at
+first start, inheriting the parent's `var_lib_t` label. Fedora's policy expects `virt_var_lib_t`
+there, and the confined `virtnetworkd_t` cannot write `var_lib_t`:
+
+```
+AVC avc: denied { write } for comm="rpc-virtnetwork" name="libvirt"
+    scontext=sys…:virtnetworkd_t tcontext=sys…:var_lib_t tclass=dir
+virtnetworkd: cannot create directory /var/lib/libvirt/dnsmasq: Permission denied
+```
+
+which surfaces to the user as `Requested operation is not valid: network 'default' is not
+active` — the NAT bridge is never built. The image therefore ships
+`/usr/lib/tmpfiles.d/ublue-libvirt-selinux.conf` (`d` + `z`), so the path is created and
+re-labelled on every boot. On a system that predates that rule:
+
+```sh
+sudo restorecon -Rv /var/lib/libvirt      # label it virt_var_lib_t
+sudo virsh net-start default              # Autostart is already 'yes', so this sticks
+```
+
 ## DNS content filter (adult-content blocklist)
 
 Filtering is done at DNS level with a local resolver, so it covers every app on the
