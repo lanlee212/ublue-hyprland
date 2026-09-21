@@ -67,6 +67,15 @@ modules:
         # DNS content filter (adult-content blocklist): local filtering resolver
         - dnsmasq
         - curl
+        # Printing + scanning. base-main already has cups, cups-filters(+driverless)
+        # and avahi, but the L2740DW is a Gen1 (GDI) Brother: neither PCL nor
+        # PostScript, so the generic drivers produce garbage and brlaser is the
+        # driver that works. All pinned here so a base change can't drop them.
+        - printer-driver-brlaser
+        - system-config-printer     # GUI to add/manage queues (polkit prompt)
+        - cups-browsed              # IPP/AirPrint discovery for network printers
+        - sane-airscan              # driverless scanning (eSCL/WSD) over the LAN
+        - simple-scan               # scanning GUI
         # apps (Lee)
         - brave-origin             # from the official Brave repo (added above)
         - geany

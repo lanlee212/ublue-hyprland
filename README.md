@@ -177,6 +177,40 @@ sudo restorecon -Rv /var/lib/libvirt      # label it virt_var_lib_t
 sudo virsh net-start default              # Autostart is already 'yes', so this sticks
 ```
 
+## Printing & scanning
+
+**The printer is a Brother MFC-L2740DW — a Gen1/GDI machine**, which is why nothing "just
+works": it understands neither PCL nor PostScript, so CUPS's generic drivers print garbage
+and only the vendor driver or **brlaser** (Fedora `printer-driver-brlaser`, shipped here) is
+usable. CUPS itself is in the base image and does detect the device on USB
+(`usb://Brother/MFC-L2740DW series?serial=…`) — what was missing was a *queue* and a tool to
+create one:
+
+    printer-driver-brlaser   the driver that actually works with this printer
+    system-config-printer    GUI to add/tune queues (polkit prompts, no terminal needed)
+    cups-browsed             IPP/AirPrint discovery when the printer is on the network
+    sane-airscan             driverless scanning (eSCL/WSD)
+    simple-scan              scanning GUI
+
+One command adds the queue (it finds the USB URI and the closest brlaser PPD itself):
+
+```sh
+sudo /usr/share/ublue-hyprland/scripts/add-brother-printer.sh
+lp -d Brother /etc/nsswitch.conf     # quick test page
+```
+
+If the test page comes out garbled, the family PPD is the thing to change — `brl2710w.ppd`
+(MFC-L2710DW series) is the default, `brl2700w.ppd` (MFC-L2700DW series) the fallback; both
+are in `/usr/lib/cups/driver/brlaser.drv`. Over Ethernet/Wi-Fi no driver is needed at all —
+the printer speaks IPP:
+
+```sh
+sudo lpadmin -p Brother -E -v ipp://<printer-ip>/ipp/print -m everywhere
+```
+
+Scanning works over the network via `sane-airscan` (`simple-scan` as the GUI); the Gen1
+Brother USB scanner is not covered by open-source backends, so scan over the LAN.
+
 ## DNS content filter (adult-content blocklist)
 
 Filtering is done at DNS level with a local resolver, so it covers every app on the
@@ -194,7 +228,8 @@ system without per-app rules:
 - **Hand-picked extras** live in `etc/dnsmasq.d/ublue-custom-blocks.conf` — separate from
   the auto-refreshed list, so weekly updates can never drop them. Entries use
   `address=/<domain>/0.0.0.0`, which blocks the domain **and all its subdomains**.
-  Currently blocked there: `f95zone.to`, `janitorai.com`, `chub.ai`, `chubusercontent.com`.
+  Currently blocked there: `f95zone.to`, `janitorai.com`, `chub.ai`, `chubusercontent.com`,
+  `saucepan.ai`.
   Adding a site = one line + rebuild (or drop the file onto a running system's
   `/etc/dnsmasq.d/` and `systemctl reload dnsmasq`).
 
@@ -235,6 +270,7 @@ systemctl reboot
 - [x] Greeter sync kept working after the `noctalia-git` move (pkexec, not run0)
 - [x] Umbriel session: Hyprland config ported to `umbriel/config.toml` + shipped
 - [x] Virtualisation: QEMU/KVM (already working) + libvirt, virsh, virt-install, virt-manager, swtpm
+- [x] Printing + scanning: Brother MFC-L2740DW via brlaser (+ system-config-printer, sane-airscan)
 - [ ] Smoke test (VM rebase)
 - [ ] Optional: bootc-image-builder ISO
 
@@ -254,6 +290,7 @@ files/system/usr/share/ublue-hyprland/config/hypr/hyprland.lua
 files/system/usr/share/ublue-hyprland/config/umbriel/config.toml   # Hyprland config ported to Umbriel TOML
 files/system/usr/share/ublue-hyprland/scripts/lock-suspend.sh      # SUPER+L: pause media + lock & suspend
 files/system/usr/share/ublue-hyprland/scripts/screenshot.sh        # grim/slurp screenshots (full|area|annotate)
+files/system/usr/share/ublue-hyprland/scripts/add-brother-printer.sh  # CUPS queue for the MFC-L2740DW (brlaser)
 files/system/usr/share/ublue-hyprland/config/greetd/config.toml
 files/system/usr/share/ublue-hyprland/config/wayland-sessions/hyprland.desktop
 files/system/usr/share/ublue-hyprland/session-hyprland.sh
