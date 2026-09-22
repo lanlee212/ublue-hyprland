@@ -102,7 +102,7 @@ modules:
         - nerd-fonts
         - qemu
         - fwupd
-        - aisleroit
+        - aisleriot
         - qt6ct
         # pyprland runtime deps (the tool itself is pip-installed in the next module — no Fedora package)
         - python3-pip
