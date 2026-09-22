@@ -2,3 +2,4 @@
 # Do not edit directly.
 
 /var/lib/noctalia-greeter(/.*)?    system_u:object_r:xdm_var_lib_t:s0
+/var/swapfile    system_u:object_r:swapfile_t:s0

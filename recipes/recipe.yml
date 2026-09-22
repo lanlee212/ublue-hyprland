@@ -44,7 +44,6 @@ modules:
         - xdg-desktop-portal-hyprland
         - hyprland-guiutils         # silences 0.56's startup nag (hyprland-dialog on PATH); same COPR
         - noctalia
-        - ghostty
         - foot
         # graphical login: greetd + Noctalia Greeter (Noctalia-styled login screen, replaces sddm)
         - greetd
@@ -103,14 +102,12 @@ modules:
         - nerd-fonts
         - qemu
         - fwupd
+        - aisleroit
+        - qt6ct
         # pyprland runtime deps (the tool itself is pip-installed in the next module — no Fedora package)
         - python3-pip
         - python3-aiohttp
         - python3-aiofiles
-        - python3-pillow
-        - pocillo-gtk-theme         # base (chrome bits + index.theme)
-        - pocillo-gtk3-theme        # GTK3 apps
-        - pocillo-gtk4-theme        # GTK4/libadwaita apps
         # Virtualisation: run and manage KVM guests. The `qemu` line above ships
         # the emulator itself (all targets, GTK/SDL/SPICE displays, virtiofsd,
         # OVMF firmware); these add the management layer VM tooling expects.
