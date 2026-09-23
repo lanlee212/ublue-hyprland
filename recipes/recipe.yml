@@ -136,12 +136,12 @@ modules:
         - blender
         - kitty
         - firefox
-- type: script
+-
+  - type: script
     snippets:
       - wget https://installers.privateinternetaccess.com/download/pia-linux-3.7.2-08420.run
       - chmod +x pia-linux-3.7.2-08420.run
-      - ./pia-linux-3.7.2-08420.run
-      
+      - ./pia-linux-3.7.2-08420.run     
       
   - type: script
     snippets:
