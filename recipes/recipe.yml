@@ -136,7 +136,7 @@ modules:
         - blender
         - kitty
         - firefox
--
+        
   - type: script
     snippets:
       - wget https://installers.privateinternetaccess.com/download/pia-linux-3.7.2-08420.run
