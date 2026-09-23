@@ -139,9 +139,10 @@ modules:
         
   - type: script
     snippets:
-      - wget https://installers.privateinternetaccess.com/download/pia-linux-3.7.2-08420.run
-      - chmod +x pia-linux-3.7.2-08420.run
-      - ./pia-linux-3.7.2-08420.run     
+      - curl -L "https://installers.privateinternetaccess.com/download/pia-linux-3.7.2-08420.run" -o /tmp/pia-linux-3.7.2-08420.run
+      - chmod +x /tmp/pia-linux-3.7.2-08420.run
+      - bash /tmp/pia-linux-3.7.2-08420.run     
+      - rm -f /tmp/pia-linux-3.7.2-08420.run 
       
   - type: script
     snippets:
