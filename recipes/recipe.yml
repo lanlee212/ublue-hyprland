@@ -139,13 +139,6 @@ modules:
         
   - type: script
     snippets:
-      - curl -L "https://installers.privateinternetaccess.com/download/pia-linux-3.7.2-08420.run" -o /tmp/pia-linux-3.7.2-08420.run
-      - chmod +x /tmp/pia-linux-3.7.2-08420.run
-      - bash /tmp/pia-linux-3.7.2-08420.run     
-      - rm -f /tmp/pia-linux-3.7.2-08420.run 
-      
-  - type: script
-    snippets:
       # RustDesk remote-desktop client. Not packaged in Fedora or Terra, so take
       # the official release RPM and PIN the version — bump it deliberately.
       # Installs /usr/bin/rustdesk (1.4.9, 77 MB) plus its launcher entry and
