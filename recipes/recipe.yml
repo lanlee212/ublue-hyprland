@@ -55,6 +55,7 @@ modules:
         - wireplumber
         - polkit
         - power-profiles-daemon
+        - fuse-libs
         # Secret Service provider. Apps keep credentials here (Chromium-family
         # "safe storage", megasync, mail clients, git helpers); without it they
         # silently fail to persist and re-ask every session. gnome-keyring-pam
