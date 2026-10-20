@@ -246,6 +246,50 @@ Known limits (state of the art for DNS filtering): a VPN (WireGuard/OpenVPN) rou
 through its own tunnel and bypasses this entirely, and browser-internal DoH/DoT
 resolvers can evade a plain DNS filter unless they're blocked/hardened separately.
 
+## Anti-cheat compatibility (Easy Anti-Cheat Linux v2)
+
+Epic's rebuilt Linux anti-cheat (EAC Linux v2, piloting with Fortnite) verifies the
+platform instead of loading a kernel driver: signed kernel and modules, TPM 2.0,
+Secure Boot, measured boot, IOMMU, kernel lockdown integrity, kexec disabled, and the
+BPF LSM. The image meets the parts that live in the image; the rest are firmware and
+boot settings on each machine.
+
+Image side (already true, no config needed):
+
+- Kernel and all modules come from Fedora, signed by the Fedora Secure Boot CA; the
+  akmods cert shipped at `/etc/pki/akmods/certs/akmods-ublue.der` is Universal Blue's.
+  **Both keys are on Epic's well-known list**, so no key request to Epic is needed.
+- BPF LSM is active in Fedora 44 (`/sys/kernel/security/lsm` contains `bpf`).
+- `etc/sysctl.d/99-eac.conf` sets `kernel.kexec_load_disabled = 1` (the one requirement
+  that is purely image-side).
+
+Machine side (per-host, cannot be baked into an image):
+
+- TPM 2.0 / AMD fTPM enabled in firmware.
+- Secure Boot enabled with factory keys enrolled — the firmware db must also carry
+  **Microsoft UEFI CA 2023**, otherwise `bootloader-update.service` refuses to update
+  shim (it fails with "Updating the shim could render this system unbootable") and the
+  bootloader stays frozen. Check: `mokutil --db | grep -i 'UEFI CA 2023'`.
+- IOMMU enabled in firmware, no `iommu=pt` in kargs.
+- Lockdown integrity: automatic — Fedora's kernel enables it as soon as Secure Boot is
+  on (`/sys/kernel/security/lockdown` → `[integrity]`).
+
+Note `lockdown=integrity` (and `sig_enforce=Y`) block unsigned kernel modules and
+`/dev/mem` access. Local akmod/DKMS builds won't load while Secure Boot is on.
+
+Verify all eight requirements on a running machine:
+
+```sh
+mokutil --sb-state                                    # SecureBoot enabled
+cat /sys/kernel/security/lockdown                     # none [integrity] confidentiality
+cat /proc/sys/kernel/kexec_load_disabled              # 1
+cat /sys/kernel/security/lsm                          # contains bpf
+ls /sys/kernel/iommu_groups | wc -l                   # non-zero
+cat /sys/class/tpm/tpm0/tpm_version_major             # 2
+head -c 32 /sys/class/tpm/tpm0/pcr-sha256/8           # non-zero = measured boot
+systemctl status bootloader-update.service            # must not be failed
+```
+
 ## Install (rebase)
 
 On an existing Fedora Atomic install:
@@ -284,6 +328,7 @@ files/system/usr/lib/tmpfiles.d/noctalia-greeter-selinux.conf  # d + Z: greetd o
 files/system/etc/dnsmasq.d/ublue-filter.conf        # filtering resolver config
 files/system/etc/NetworkManager/conf.d/90-ublue-dns.conf  # dns=none (keep the filter authoritative)
 files/system/etc/systemd/resolved.conf.d/50-ublue-dns.conf # resolved → 127.0.0.1
+files/system/etc/sysctl.d/99-eac.conf                # kexec disabled (EAC Linux v2 requirement)
 files/system/usr/lib/systemd/system/ublue-blocklist-update.{service,timer}
 files/system/usr/share/ublue-hyprland/blocklist-update.sh  # fetch + reload (build + weekly)
 files/system/usr/share/ublue-hyprland/config/hypr/hyprland.lua
